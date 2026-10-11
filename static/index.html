@@ -267,6 +267,8 @@ body.collapsed #collapse svg{transform:rotate(180deg)}
 .row-actions .grow{flex:1}
 .note{font-size:12px;color:var(--t500);margin-top:8px;word-break:break-word;display:flex;align-items:center;gap:6px}
 .note.err{color:#fca5a5}.note.ok{color:#6ee7b7}
+.meter{position:relative;height:6px;border-radius:999px;background:var(--b800);overflow:hidden;margin-top:14px}
+.meter-bar{height:100%;width:0;border-radius:inherit;transition:width .5s var(--spring),background .3s}
 .bao{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-radius:10px;border:1px solid var(--b700);background:rgba(11,17,32,.5);padding:10px 12px;margin-bottom:14px}
 .sitelist{display:flex;flex-direction:column;gap:6px}
 .siterow{display:flex;align-items:center;gap:12px;border-radius:8px;padding:8px 10px;border:1px solid rgba(36,48,73,.6);transition:background .15s;animation:cardIn .35s var(--spring) backwards}
@@ -1004,6 +1006,12 @@ function renderSettings() {
     </section>
 
     <section class="card">
+      <div class="card-head"><h2 class="card-title">${I('lock', 's16')}Безопасность</h2>
+        ${adminToken ? `<button class="btn btn-ghost btn-sm" id="logout">${I('login', 's14')}Выйти</button>` : ''}</div>
+      <div class="card-body">${securityBody(c)}</div>
+    </section>
+
+    <section class="card">
       <div class="card-head"><h2 class="card-title">${I('server', 's16')}Источники NPM</h2>
         <button class="btn btn-primary btn-sm" id="srcSave">${I('save', 's14')}Сохранить</button></div>
       <div class="card-body">
@@ -1050,6 +1058,8 @@ function renderSettings() {
       toast('success', 'Настройки сохранены'); loadSettings();
     } catch (err) { toast('error', 'Не удалось сохранить', err.message); }
   };
+
+  bindSecurity(c);
 
   // источники
   const st = s => S.sources.find(x => x.id === s.id);
@@ -1133,6 +1143,94 @@ function renderSettings() {
     || emptyState('bookmark', 'Своих сайтов пока нет', 'Добавьте сайт, которого нет в NPM');
   $('#siteList').onclick = e => { const b = e.target.closest('[data-edit]'); if (b) siteDialog(S.hosts.find(h => h.key === b.dataset.edit)); };
   $('#siteAdd').onclick = () => siteDialog();
+}
+
+// ---------------------------------------------------------------- смена пароля администратора
+function securityBody(c) {
+  const a = c.admin || {}, bao = c.openbao || {};
+  const where = {
+    openbao: `${badge('green', 'OpenBao', 'key')}<span class="hint" style="display:inline;margin:0 0 0 8px">хранится в <span class="mono">${esc(a.path)}</span></span>`,
+    env: badge('amber', 'ADMIN_PASSWORD', 'triangle'),
+    none: badge('red', 'не задан', 'unlock'),
+  }[a.source] || '';
+  if (a.source === 'env') return `<div style="margin-bottom:10px">${where}</div>
+    <p class="note" style="margin:0">${I('info', 's14')}Пароль задан переменной окружения ADMIN_PASSWORD. Чтобы менять его здесь, уберите её из .env — тогда пароль будет храниться в OpenBao.</p>`;
+  if (!bao.ok) return `<p class="note err" style="margin:0">${I('key', 's14')}OpenBao недоступен — пароль негде сохранить.</p>`;
+  return `<div style="margin-bottom:14px">${where}</div>
+    ${a.source === 'none' ? `<p class="note err" style="margin:0 0 14px">${I('triangle', 's14')}Пароль не задан: изменять настройки может любой, кто открыл страницу.</p>` : ''}
+    <form id="pwForm" autocomplete="off"><div class="fields">
+      ${a.source === 'none' ? '' : field('Текущий пароль', pwInput('pw-cur'))}
+      ${field('Новый пароль', pwInput('pw-new'), '<span id="pwHint">Не короче 8 символов</span>')}
+      ${field('Повторите пароль', pwInput('pw-rep'), '<span id="pwMatch">&nbsp;</span>')}
+    </div>
+    <div class="meter"><div class="meter-bar" id="pwBar"></div></div>
+    <div class="note err" id="pwErr"></div>
+    <div class="row-actions">
+      <button type="button" class="btn btn-ghost btn-sm" id="pwGen">${I('zap', 's14')}Сгенерировать</button>
+      <span class="grow"></span>
+      <button class="btn btn-primary btn-sm" id="pwSave" disabled>${I('save', 's14')}${a.source === 'none' ? 'Задать пароль' : 'Сменить пароль'}</button>
+    </div></form>`;
+}
+
+function pwStrength(p) {
+  if (!p) return { score: 0, label: 'Не короче 8 символов' };
+  let s = 0;
+  if (p.length >= 8) s++;
+  if (p.length >= 12) s++;
+  if (/[a-zа-я]/.test(p) && /[A-ZА-Я]/.test(p)) s++;
+  if (/\d/.test(p)) s++;
+  if (/[^\w\s]/.test(p) || p.length >= 20) s++;
+  if (p.length < 8) s = Math.min(s, 1);
+  return { score: s, label: ['Очень слабый', 'Слабый', 'Средний', 'Хороший', 'Надёжный', 'Отличный'][s] };
+}
+
+function bindSecurity(c) {
+  $('#logout') && ($('#logout').onclick = () => {
+    adminToken = '';
+    try { sessionStorage.removeItem('admin'); } catch {}
+    toast('info', 'Вы вышли', 'Для изменений снова понадобится пароль');
+    location.hash = '#/';
+  });
+  const form = $('#pwForm');
+  if (!form) return;
+  const cur = $('.pw-cur', form), nw = $('.pw-new', form), rep = $('.pw-rep', form);
+  const check = () => {
+    const { score, label } = pwStrength(nw.value);
+    const bar = $('#pwBar');
+    bar.style.width = (nw.value ? Math.max(8, score * 20) : 0) + '%';
+    bar.style.background = score >= 4 ? 'linear-gradient(90deg,#059669,#34d399)' : score >= 3 ? 'linear-gradient(90deg,#2563eb,#60a5fa)'
+      : score >= 2 ? 'linear-gradient(90deg,#d97706,#fbbf24)' : 'linear-gradient(90deg,#dc2626,#f87171)';
+    $('#pwHint').textContent = nw.value ? `${label} · ${nw.value.length} симв.` : 'Не короче 8 символов';
+    const same = rep.value && rep.value === nw.value;
+    $('#pwMatch').innerHTML = !rep.value ? '&nbsp;' : same ? '<span style="color:#6ee7b7">Пароли совпадают</span>' : '<span style="color:#fca5a5">Пароли не совпадают</span>';
+    $('#pwSave').disabled = !(nw.value.length >= 8 && same && (!cur || cur.value));
+  };
+  form.addEventListener('input', check);
+  $('#pwGen').onclick = () => {
+    const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789-_!@#%';
+    const rnd = crypto.getRandomValues(new Uint32Array(20));
+    const pw = [...rnd].map(n => abc[n % abc.length]).join('');
+    nw.value = rep.value = pw;
+    for (const inp of [nw, rep]) { inp.type = 'text'; inp.nextElementSibling.innerHTML = I('eyeOff', 's16'); }
+    check();
+    toast('info', 'Пароль сгенерирован', 'Сохраните его в менеджере паролей перед сменой');
+  };
+  form.onsubmit = async e => {
+    e.preventDefault();
+    $('#pwErr').textContent = '';
+    $('#pwSave').disabled = true;
+    try {
+      await api('POST', 'api/admin/password', { current: cur ? cur.value : '', new: nw.value });
+      adminToken = nw.value;
+      try { sessionStorage.setItem('admin', nw.value); } catch {}
+      toast('success', 'Пароль изменён', 'Новый пароль сохранён в OpenBao');
+      loadSettings();
+    } catch (err) {
+      $('#pwErr').innerHTML = I('octagon', 's14') + esc(err.message);
+      form.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(0)' }], { duration: 240 });
+      check();
+    }
+  };
 }
 
 // ---------------------------------------------------------------- состояние и живые обновления

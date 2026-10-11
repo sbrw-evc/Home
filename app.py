@@ -11,6 +11,7 @@
   GET  /health
 Админские (заголовок X-Admin-Token, если задан ADMIN_PASSWORD):
   POST /api/login                 — проверка пароля
+  POST /api/admin/password        — смена пароля администратора {"current", "new"} (хранится в OpenBao)
   GET  /api/config                — конфиг без паролей
   PUT  /api/config/general        — заголовок, поиск, показ выключенных
   PUT  /api/config/sources        — список источников NPM
@@ -227,6 +228,29 @@ def admin_password():
         res = bao.call("GET", f"{BAO_MOUNT}/data/{BAO_ADMIN_PATH}")
         _admin_cache.update(pw=((res or {}).get("data", {}).get("data") or {}).get("password", ""), at=time.time())
     return _admin_cache["pw"]
+
+
+def admin_source():
+    """Где задан пароль администратора: env, openbao или нигде (none)."""
+    if ADMIN_PASSWORD:
+        return "env"
+    try:
+        return "openbao" if admin_password() else "none"
+    except Exception:
+        return "openbao"
+
+
+def set_admin_password(new):
+    if ADMIN_PASSWORD:
+        raise ValueError("Пароль задан переменной ADMIN_PASSWORD — смените его в .env и перезапустите контейнер")
+    if not bao.configured:
+        raise ValueError("OpenBao не настроен — пароль негде сохранить")
+    if len(new) < 8:
+        raise ValueError("Новый пароль должен быть не короче 8 символов")
+    if len(new) > 200:
+        raise ValueError("Слишком длинный пароль")
+    bao.call("POST", f"{BAO_MOUNT}/data/{BAO_ADMIN_PATH}", {"data": {"password": new}})
+    _admin_cache.update(pw=new, at=time.time())
 
 
 # ---------------------------------------------------------------- источники
@@ -697,6 +721,7 @@ def public_config():
             s["email"], s["has_password"], s["secret_error"] = "", False, str(e)
     cfg["openbao"] = bao.status()
     cfg["openbao"]["path"] = f"{BAO_MOUNT}/{BAO_PREFIX}/<id>"
+    cfg["admin"] = {"source": admin_source(), "path": f"{BAO_MOUNT}/{BAO_ADMIN_PATH}"}
     return cfg
 
 
@@ -736,6 +761,8 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             raise ApiError(503, f"Не удалось получить пароль администратора: {e}")
         if pw and not hmac.compare_digest(self.headers.get("X-Admin-Token", "").encode(), pw.encode()):
+            if self.headers.get("X-Admin-Token"):
+                time.sleep(1)  # замедляем перебор паролей
             raise ApiError(401, "Нужен пароль администратора")
 
     def handle_api(self, method):
@@ -763,6 +790,15 @@ class Handler(BaseHTTPRequestHandler):
             data = self.body()
 
             if method == "POST" and path == "/api/login":
+                return self.send(200, {"ok": True})
+
+            if method == "POST" and path == "/api/admin/password":
+                current = admin_password()
+                # текущий пароль спрашиваем еще раз, даже если сессия уже открыта
+                if current and not hmac.compare_digest(str(data.get("current", "")).encode(), current.encode()):
+                    time.sleep(1)
+                    raise ApiError(403, "Текущий пароль указан неверно")
+                set_admin_password(str(data.get("new", "")))
                 return self.send(200, {"ok": True})
 
             if method == "PUT" and path == "/api/config/general":
