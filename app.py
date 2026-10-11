@@ -7,6 +7,7 @@
 Публичные эндпоинты:
   GET  /api/state      — текущее состояние (хосты, избранное, настройки поиска)
   GET  /api/events     — Server-Sent Events: состояние при каждом изменении
+  GET  /api/icon/<key> — иконка сайта (ищется на сервере и кэшируется)
   GET  /health
 Админские (заголовок X-Admin-Token, если задан ADMIN_PASSWORD):
   POST /api/login                 — проверка пароля
@@ -19,19 +20,24 @@
   DELETE /api/sites/<id>          — удалить свой сайт
   POST /api/favorites             — {"key": ..., "on": true|false}
 """
+import base64
+import collections
 import copy
 import hashlib
 import hmac
 import json
 import os
+import re
 import secrets
 import sqlite3
 import ssl
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime
+from html.parser import HTMLParser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 PORT = int(os.environ.get("PORT", "8088"))
@@ -426,6 +432,204 @@ def publish(cfg):
             state_cond.notify_all()
 
 
+# ---------------------------------------------------------------- иконки сайтов
+#
+# Браузер сам по /favicon.ico находит иконку далеко не всегда: SPA отдают на этот путь HTML,
+# а настоящая иконка указана в <link rel="icon">, манифесте или data:-URI. Поэтому ищем на сервере:
+# страница -> <link rel=icon|apple-touch-icon> -> манифест -> /favicon.ico. Если публичный адрес
+# с сервера недоступен (нет hairpin NAT), идем напрямую на бэкенд хоста NPM с нужным заголовком Host.
+
+ICON_DIR = os.path.join(os.path.dirname(CONFIG_PATH) or ".", "icons")
+ICON_TTL_OK = float(os.environ.get("ICON_TTL_HOURS", "24")) * 3600
+ICON_TTL_MISS = 3600
+ICON_MAX = 1_000_000
+_icon_locks = collections.defaultdict(threading.Lock)
+_insecure = ssl._create_unverified_context()  # нужны только картинки, сертификаты бэкендов часто самоподписанные
+
+
+class _Links(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.links, self.base = [], None
+
+    def handle_starttag(self, tag, attrs):
+        a = {k.lower(): (v or "") for k, v in attrs}
+        if tag == "base" and a.get("href") and self.base is None:
+            self.base = a["href"]
+        elif tag == "link" and a.get("href"):
+            self.links.append(a)
+
+
+def _sniff(data):
+    """Тип картинки по сигнатуре; None — не картинка (например, HTML вместо favicon)."""
+    if data.startswith(b"\x89PNG"):
+        return "image/png"
+    if data[:4] in (b"\x00\x00\x01\x00", b"\x00\x00\x02\x00"):
+        return "image/x-icon"
+    if data[:3] == b"GIF":
+        return "image/gif"
+    if data[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    head = data[:3000].lower()
+    if b"<svg" in head and b"<html" not in head:
+        return "image/svg+xml"
+    return None
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+_opener = urllib.request.build_opener(_NoRedirect, urllib.request.HTTPSHandler(context=_insecure))
+
+
+def _get(url, host=None, accept="*/*"):
+    """GET с ручными редиректами. host — заголовок Host при обращении напрямую к бэкенду:
+    редирект бэкенда на свой публичный домен переписывается обратно на адрес бэкенда."""
+    if url.startswith("data:"):
+        meta, _, payload = url[5:].partition(",")
+        data = base64.b64decode(payload) if meta.endswith(";base64") else urllib.parse.unquote_to_bytes(payload)
+        return url, data
+    for _ in range(6):
+        headers = {"User-Agent": "Mozilla/5.0 (NPM Dashboard icon fetcher)", "Accept": accept}
+        if host:
+            headers["Host"] = host
+        try:
+            with _opener.open(urllib.request.Request(url, headers=headers), timeout=4) as r:
+                return url, r.read(ICON_MAX)
+        except urllib.error.HTTPError as e:
+            loc = e.headers.get("Location")
+            if e.code not in (301, 302, 303, 307, 308) or not loc:
+                # страница входа или ошибки тоже может содержать ссылку на иконку
+                return url, e.read(ICON_MAX)
+            nxt = urllib.parse.urlsplit(urllib.parse.urljoin(url, loc))
+            if host and nxt.hostname == host:
+                cur = urllib.parse.urlsplit(url)
+                url = urllib.parse.urlunsplit((cur.scheme, cur.netloc, nxt.path, nxt.query, ""))
+            else:
+                url, host = nxt.geturl(), None
+    raise RuntimeError("слишком много редиректов")
+
+
+def _size_score(link):
+    rel, href, typ = link.get("rel", "").lower().split(), link.get("href", ""), link.get("type", "").lower()
+    if "mask-icon" in rel:
+        return None  # одноцветный силуэт
+    if not ({"icon", "apple-touch-icon", "apple-touch-icon-precomposed"} & set(rel)):
+        return None
+    if "svg" in typ or re.search(r"\.svg($|\?)", href, re.I) or href.startswith("data:image/svg"):
+        return 1000
+    sizes = [int(n) for n in re.findall(r"(\d+)x\d+", link.get("sizes", ""))]
+    size = max(sizes) if sizes else (180 if "apple-touch-icon" in " ".join(rel) else 32)
+    return size if size <= 256 else 256 - size / 100
+
+
+def _candidates(page_url, html):
+    p = _Links()
+    try:
+        p.feed(html.decode("utf-8", "replace"))
+    except Exception:
+        pass
+    base = urllib.parse.urljoin(page_url, p.base) if p.base else page_url
+    icons, manifests = [], []
+    for link in p.links:
+        href = link["href"].strip()
+        url = href if href.startswith("data:") else urllib.parse.urljoin(base, href)
+        if "manifest" in link.get("rel", "").lower().split():
+            manifests.append(url)
+            continue
+        score = _size_score(link)
+        if score is not None:
+            icons.append((score, url))
+    return [u for _, u in sorted(icons, reverse=True)], manifests
+
+
+def _manifest_icons(url, host):
+    try:
+        final, data = _get(url, host, "application/manifest+json,application/json")
+        icons = json.loads(data.decode("utf-8", "replace")).get("icons") or []
+    except Exception:
+        return []
+    def score(i):
+        sizes = [int(n) for n in re.findall(r"(\d+)x\d+", i.get("sizes", ""))]
+        s = max(sizes) if sizes else 64
+        return s if s <= 256 else 256 - s / 100
+    return [urllib.parse.urljoin(final, i["src"]) for i in sorted(icons, key=score, reverse=True) if i.get("src")]
+
+
+def find_icon(host):
+    """Ищет иконку для хоста. Возвращает (bytes, mime) или None."""
+    bases = [(host["url"], None)]
+    if host.get("target") and not host.get("custom"):
+        bases.append((host["target"].rstrip("/") + "/", host["domain"]))
+    tried, deadline = set(), time.time() + 20
+
+    def try_image(url, hdr):
+        if url in tried or time.time() > deadline:
+            return None
+        tried.add(url)
+        try:
+            _, data = _get(url, hdr, "image/avif,image/webp,image/svg+xml,image/*,*/*;q=0.8")
+        except Exception:
+            return None
+        mime = _sniff(data) if data else None
+        return (data, mime) if mime else None
+
+    if host.get("icon"):
+        found = try_image(host["icon"], None)
+        if found:
+            return found
+    for base, hdr in bases:
+        if time.time() > deadline:
+            break
+        try:
+            page_url, html = _get(base, hdr, "text/html,application/xhtml+xml")
+        except Exception:
+            continue  # адрес недоступен с сервера — пробуем следующий
+        icons, manifests = _candidates(page_url, html)
+        for m in manifests[:2]:
+            icons += _manifest_icons(m, hdr)
+        icons.append(urllib.parse.urljoin(page_url, "/favicon.ico"))
+        icons.append(urllib.parse.urljoin(base, "/favicon.ico"))
+        for url in icons[:10]:
+            found = try_image(url, hdr)
+            if found:
+                return found
+    return None
+
+
+def icon_for(key):
+    """Иконка из кэша или свежая. Возвращает (bytes, mime) или None."""
+    with state_cond:
+        host = next((h for h in public_state.get("hosts", []) if h["key"] == key), None)
+    if not host:
+        return None
+    sig = hashlib.sha1(json.dumps([key, host["url"], host.get("icon"), host.get("target")]).encode()).hexdigest()[:24]
+    path = os.path.join(ICON_DIR, sig)
+    with _icon_locks[sig]:
+        try:
+            with open(path + ".json", encoding="utf-8") as f:
+                meta = json.load(f)
+            if time.time() - meta["at"] < (ICON_TTL_OK if meta["mime"] else ICON_TTL_MISS):
+                if not meta["mime"]:
+                    return None
+                with open(path + ".bin", "rb") as f:
+                    return f.read(), meta["mime"]
+        except (OSError, ValueError, KeyError):
+            pass
+        found = find_icon(host)
+        os.makedirs(ICON_DIR, exist_ok=True)
+        if found:
+            with open(path + ".bin", "wb") as f:
+                f.write(found[0])
+        with open(path + ".json", "w", encoding="utf-8") as f:
+            json.dump({"key": key, "mime": found[1] if found else None, "at": time.time()}, f)
+        return found
+
+
 # ---------------------------------------------------------------- валидация ввода
 
 def clean_site(data):
@@ -543,6 +747,8 @@ class Handler(BaseHTTPRequestHandler):
                         return self.send(200, public_state)
                 if path == "/api/events":
                     return self.events()
+                if path.startswith("/api/icon/"):
+                    return self.icon(urllib.parse.unquote(path[len("/api/icon/"):]))
                 if path == "/health":
                     return self.send(200, b"ok", "text/plain")
                 if path == "/api/config":
@@ -664,6 +870,25 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_DELETE(self):
         self.handle_api("DELETE")
+
+    def icon(self, key):
+        found = icon_for(key)
+        if not found:
+            self.send_response(404)
+            self.send_header("Content-Length", "0")
+            self.send_header("Cache-Control", "public, max-age=3600")
+            self.end_headers()
+            return
+        data, mime = found
+        self.send_response(200)
+        self.send_header("Content-Type", mime)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "public, max-age=86400")
+        # SVG с чужого сайта отдаем с нашего origin — запрещаем в нем скрипты
+        self.send_header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        self.wfile.write(data)
 
     def events(self):
         self.send_response(200)

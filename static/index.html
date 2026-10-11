@@ -785,15 +785,21 @@ function cardHTML(h) {
     <div class="s-badges">${badges}</div>`;
 }
 
+// иконку ищет сервер: <link rel="icon">, манифест, /favicon.ico, в т.ч. через бэкенд NPM
+const strHash = s => [...s].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36);
 function loadIcon(el, h) {
   const img = new Image();
-  img.referrerPolicy = 'no-referrer';
   img.onload = () => {
     if (img.naturalWidth <= 1) return;
     const box = $('.s-ico', el); box.textContent = ''; box.classList.add('img'); box.appendChild(img);
     img.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 250, easing: 'ease-out' });
   };
-  img.src = h.icon || (h.url.match(/^https?:\/\/[^/]+/) || [h.url])[0] + '/favicon.ico';
+  // если сервер не нашел — последняя попытка из браузера: ему публичные адреса могут быть доступны
+  img.onerror = () => {
+    img.onerror = null;
+    img.src = (h.url.match(/^https?:\/\/[^/]+/) || [h.url])[0] + '/favicon.ico';
+  };
+  img.src = `api/icon/${encodeURIComponent(h.key)}?v=${strHash([h.url, h.icon, h.target].join('|'))}`;
 }
 
 function sortHosts(list) {
@@ -830,7 +836,7 @@ function renderCards(changed = new Set()) {
       cards.set(h.key, c);
     }
     if (c.sig !== sig) {
-      const iconSrc = h.icon || h.url;
+      const iconSrc = [h.url, h.icon, h.target].join('|');
       const oldImg = c.icon === iconSrc ? $('.s-ico img', c.el) : null;
       c.el.innerHTML = cardHTML(h);
       if (oldImg) { const box = $('.s-ico', c.el); box.textContent = ''; box.classList.add('img'); box.appendChild(oldImg); }
