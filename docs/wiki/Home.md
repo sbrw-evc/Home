@@ -1,47 +1,49 @@
 # Home
 
-**Home** — стартовая страница для домашней лаборатории. Она собирает в карточки все сайты, заведённые в
-[Nginx Proxy Manager](https://nginxproxymanager.com/), добавляет к ним ваши собственные сайты, избранное и строку поиска
-и обновляется на лету, без перезагрузки страницы.
+**Home** is a start page for a homelab. It turns every site configured in
+[Nginx Proxy Manager](https://nginxproxymanager.com/) into a card, adds your own sites, favorites and a search bar,
+and updates live without reloading the page.
 
-## Содержание
+## Contents
 
-| Страница | О чём |
+| Page | About |
 |---|---|
-| [[Установка]] | Установка из релиза, из исходников, обновление |
-| [[Настройка]] | Переменные окружения, файл `config.json`, настройки в интерфейсе |
-| [[Источники NPM\|Источники-NPM]] | Локальная база SQLite и удалённые NPM через API |
-| [[OpenBao]] | Хранение логинов и паролей, AppRole, распечатывание |
-| [[Безопасность]] | Пароль администратора, что видно без входа, рекомендации |
-| [[Возможности]] | Поиск, избранное, свои сайты, иконки, горячие клавиши |
-| [[API]] | REST API и поток событий SSE |
-| [[Решение проблем\|Решение-проблем]] | Частые проблемы и диагностика |
-| [[Разработка]] | Устройство кода и локальный запуск |
+| [[Installation]] | Installing from a release or from source, first login, upgrading |
+| [[Configuration]] | Environment variables, `config.json`, in-app settings |
+| [[NPM Sources\|NPM-Sources]] | Local SQLite database and remote NPM instances via API |
+| [[OpenBao]] | Storing logins and passwords, AppRole, unsealing |
+| [[Security]] | Admin password, what is visible without login, recommendations |
+| [[Features]] | Search, favorites, custom sites, icons, keyboard shortcuts |
+| [[API]] | REST API and the SSE event stream |
+| [[Troubleshooting]] | Common issues and diagnostics |
+| [[Development]] | Code structure and running locally |
 
-## Как это устроено
+## How it works
 
 ```
- Nginx Proxy Manager ──(database.sqlite, только чтение)──┐
- удалённые NPM ──────────(REST API, логин из OpenBao)────┤
+ Nginx Proxy Manager ──(database.sqlite, read-only)──────┐
+ remote NPM ─────────────(REST API, login from OpenBao)──┤
                                                           ▼
-                         Home (Python, один процесс) ──SSE──► браузер (SPA)
+                         Home (Python, single process) ──SSE──► browser (SPA)
                            │        │
             config/config.json   OpenBao (KV v2)
-   (свои сайты, избранное,     (логины/пароли NPM,
-    настройки, кэш иконок)      пароль администратора)
+   (custom sites, favorites,    (NPM logins/passwords,
+    settings, icon cache)        admin password)
 ```
 
-- Сервер опрашивает источники: локальную базу — по изменению файла (раз в 2 секунды), удалённые NPM — раз в 30 секунд.
-- Когда список меняется, всем открытым страницам уходит новое состояние через Server-Sent Events.
-- Страница обновляет только изменившиеся карточки и подсвечивает их.
+- The server polls its sources: the local database on file change (every 2 seconds), remote NPM instances every 30 seconds.
+- When the list changes, the new state is pushed to every open page via Server-Sent Events.
+- The page re-renders only the cards that changed and highlights them.
 
-## Быстрый старт
+## Quick start
 
 ```bash
-curl -L https://github.com/sbrw-evc/Home/releases/latest/download/home-1.0.0-deploy.tar.gz | tar xz
+curl -L https://github.com/sbrw-evc/Home/releases/download/v1.0.0/home-1.0.0-deploy.tar.gz | tar xz
 cd home-1.0.0 && cp .env.example .env
 ./openbao/setup.sh
 docker compose -f docker-compose.yml -f docker-compose.openbao.yml up -d
 ```
 
-Страница откроется на `http://<хост>:8088`. Подробности — в [[Установка]].
+The page opens at `http://<host>:8088`. See [[Installation]] for details.
+
+> The web interface is in Russian.

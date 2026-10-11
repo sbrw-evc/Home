@@ -1,61 +1,61 @@
 # API
 
-Все ответы — JSON в UTF-8.
+All responses are JSON in UTF-8.
 
-## Публичные
+## Public
 
-| Метод и путь | Описание |
+| Method and path | Description |
 |---|---|
-| `GET /api/state` | Текущее состояние: хосты, избранное, настройки поиска, статус источников, версия |
-| `GET /api/events` | Server-Sent Events: событие `state` с тем же содержимым при каждом изменении; пинг раз в 15 секунд |
-| `GET /api/icon/<key>` | Иконка сайта (`image/*`) или `404`. `key` — ключ хоста из `/api/state` |
-| `GET /health` | `ok <версия>` |
+| `GET /api/state` | Current state: hosts, favorites, search settings, source status, version |
+| `GET /api/events` | Server-Sent Events: a `state` event with the same payload on every change; a ping every 15 seconds |
+| `GET /api/icon/<key>` | Site icon (`image/*`) or `404`. `key` is the host key from `/api/state` |
+| `GET /health` | `ok <version>` |
 
-Пример состояния:
+Example state:
 
 ```json
 {
-  "title": "Мои сервисы",
+  "title": "My services",
   "app_version": "1.0.0",
   "version": "3f2a9c1b0d4e",
   "hosts": [{
-    "key": "local:1", "source": "Локальный NPM", "custom": false,
+    "key": "local:1", "source": "Local NPM", "custom": false,
     "name": "proxmox", "domain": "proxmox.example.com", "domains": ["proxmox.example.com"],
     "url": "https://proxmox.example.com", "target": "https://192.168.0.200:8006",
     "enabled": true, "ssl": true, "acl": false, "group": "example.com", "description": "", "icon": ""
   }],
   "favorites": ["local:1"],
   "search": { "engine": "google", "custom": [] },
-  "sources": [{ "id": "local", "name": "Локальный NPM", "type": "sqlite", "enabled": true, "ok": true, "error": "", "count": 19 }]
+  "sources": [{ "id": "local", "name": "Local NPM", "type": "sqlite", "enabled": true, "ok": true, "error": "", "count": 19 }]
 }
 ```
 
-`version` — хеш состояния: меняется, только когда что-то изменилось.
+`version` is a hash of the state: it changes only when something changed.
 
-## Требуют пароль администратора
+## Admin password required
 
-Заголовок `X-Admin-Token: <пароль в URL-кодировке>` (`encodeURIComponent` в JS, `urllib.parse.quote` в Python).
-Без пароля или с неверным — `401`.
+Header `X-Admin-Token: <URL-encoded password>` (`encodeURIComponent` in JS, `urllib.parse.quote` in Python).
+Missing or wrong password — `401`.
 
-| Метод и путь | Тело | Описание |
+| Method and path | Body | Description |
 |---|---|---|
-| `POST /api/login` | — | Проверка пароля |
-| `POST /api/admin/password` | `{"current", "new"}` | Смена пароля (`403` — неверный текущий) |
-| `GET /api/config` | — | Настройки без паролей + статус OpenBao |
-| `PUT /api/config/general` | `{"title", "show_disabled", "search_engine", "custom_engines"}` | Общие настройки |
-| `PUT /api/config/sources` | `{"sources": [...]}` | Полный список источников; пустой `password` — оставить сохранённый |
-| `POST /api/sources/test` | источник | Проверка подключения: `{"ok", "count"}` или `{"ok": false, "error"}` |
-| `POST /api/sites` | `{"name", "url", "group", "description", "icon"}` | Добавить свой сайт |
-| `PUT /api/sites/<id>` | то же | Изменить свой сайт |
-| `DELETE /api/sites/<id>` | — | Удалить свой сайт (и из избранного) |
-| `POST /api/favorites` | `{"key", "on"}` | Добавить или убрать из избранного |
+| `POST /api/login` | — | Check the password |
+| `POST /api/admin/password` | `{"current", "new"}` | Change the password (`403` — wrong current password) |
+| `GET /api/config` | — | Settings without passwords + OpenBao status |
+| `PUT /api/config/general` | `{"title", "show_disabled", "search_engine", "custom_engines"}` | General settings |
+| `PUT /api/config/sources` | `{"sources": [...]}` | Full list of sources; an empty `password` keeps the stored one |
+| `POST /api/sources/test` | source | Connection test: `{"ok", "count"}` or `{"ok": false, "error"}` |
+| `POST /api/sites` | `{"name", "url", "group", "description", "icon"}` | Add a custom site |
+| `PUT /api/sites/<id>` | same | Update a custom site |
+| `DELETE /api/sites/<id>` | — | Delete a custom site (and remove it from favorites) |
+| `POST /api/favorites` | `{"key", "on"}` | Add to or remove from favorites |
 
-Пример:
+Example:
 
 ```bash
 curl -s -X POST http://localhost:8088/api/favorites \
-  -H "X-Admin-Token: $(python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))' 'пароль')" \
+  -H "X-Admin-Token: $(python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))' 'password')" \
   -H 'Content-Type: application/json' -d '{"key":"local:1","on":true}'
 ```
 
-Ошибки: `{"error": "текст"}` с кодом `400`, `401`, `403`, `404` или `500`.
+Errors: `{"error": "message"}` with status `400`, `401`, `403`, `404` or `500`. Error messages are in Russian.

@@ -1,15 +1,15 @@
 **[[Home]]**
 
-- [[Установка]]
-- [[Настройка]]
-- [[Источники NPM|Источники-NPM]]
+- [[Installation]]
+- [[Configuration]]
+- [[NPM Sources|NPM-Sources]]
 - [[OpenBao]]
-- [[Безопасность]]
-- [[Возможности]]
+- [[Security]]
+- [[Features]]
 - [[API]]
-- [[Решение проблем|Решение-проблем]]
-- [[Разработка]]
+- [[Troubleshooting]]
+- [[Development]]
 
 ---
 
-[Релизы](https://github.com/sbrw-evc/Home/releases) · [Образ](https://github.com/sbrw-evc/Home/pkgs/container/home)
+[Releases](https://github.com/sbrw-evc/Home/releases) · [Image](https://github.com/sbrw-evc/Home/pkgs/container/home)
