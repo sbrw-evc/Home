@@ -2,13 +2,13 @@
 # Первичная настройка OpenBao для NPM Dashboard. Можно запускать повторно.
 #   - запускает OpenBao, инициализирует (ключ и root-токен -> $INIT_FILE) и распечатывает
 #   - включает KV v2 на secret/, создает политику и AppRole npm-dashboard
-#   - пишет BAO_* в $ENV_FILE дашборда
+#   - пишет BAO_* в $ENV_FILE дашборда (остальные строки не трогает)
 #   - создает случайный пароль администратора в secret/npm-dashboard/admin
 set -eu
 cd "$(dirname "$0")"
 
 INIT_FILE=${INIT_FILE:-/root/openbao-init.json}
-ENV_FILE=${ENV_FILE:-/opt/npm-dashboard/.env}
+ENV_FILE=${ENV_FILE:-$(cd .. && pwd)/.env}
 
 docker network inspect openbao >/dev/null 2>&1 || docker network create openbao >/dev/null
 mkdir -p data
@@ -49,11 +49,11 @@ else
   SECRET_ID=$(bao write -f -format=json auth/approle/role/npm-dashboard/secret-id | json "['data']['secret_id']")
   umask 077
   mkdir -p "$(dirname "$ENV_FILE")"
-  cat > "$ENV_FILE" <<EOF
-BAO_ADDR=http://openbao:8200
-BAO_ROLE_ID=$ROLE_ID
-BAO_SECRET_ID=$SECRET_ID
-EOF
+  [ -f "$ENV_FILE" ] || { [ -f ../.env.example ] && cp ../.env.example "$ENV_FILE" || : > "$ENV_FILE"; }
+  chmod 600 "$ENV_FILE"
+  # меняем только строки BAO_*, остальные настройки в .env сохраняются
+  sed -i -E "/^#? *BAO_(ADDR|TOKEN|ROLE_ID|SECRET_ID)=/d" "$ENV_FILE"
+  printf 'BAO_ADDR=http://openbao:8200\nBAO_ROLE_ID=%s\nBAO_SECRET_ID=%s\n' "$ROLE_ID" "$SECRET_ID" >> "$ENV_FILE"
   echo "AppRole записан в $ENV_FILE"
 fi
 

@@ -1,7 +1,7 @@
 # Подключение дашборда к OpenBao из каталога openbao/ (общая docker-сеть).
 # docker compose -f docker-compose.yml -f docker-compose.openbao.yml up -d --build
 services:
-  npm-dashboard:
+  home:
     networks:
       - default
       - openbao

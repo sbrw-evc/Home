@@ -333,7 +333,7 @@ body.collapsed #collapse svg{transform:rotate(180deg)}
 <aside>
   <div class="brand">
     <div class="logo" id="logo"></div>
-    <div class="brand-text"><b id="brand">Сервисы</b><small>NPM dashboard <span>live</span></small></div>
+    <div class="brand-text"><b id="brand">Сервисы</b><small>Home <span id="appVer">live</span></small></div>
   </div>
   <nav id="nav"><div class="nav-ind" id="navInd"></div><div id="navLinks"></div></nav>
   <div class="side-foot">
@@ -1253,6 +1253,7 @@ function apply(snap) {
   S.hosts = snap.hosts; S.favorites = new Set(snap.favorites); S.search = snap.search;
   S.sources = snap.sources; S.version = snap.version;
   document.title = snap.title; $('#brand').textContent = snap.title;
+  if (snap.app_version) $('#appVer').textContent = snap.app_version === 'dev' ? 'dev' : 'v' + snap.app_version;
   renderEngines(); renderNav();
   if (!route().settings) renderCards(changed);
 

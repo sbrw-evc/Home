@@ -41,6 +41,7 @@ from datetime import datetime
 from html.parser import HTMLParser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+APP_VERSION = os.environ.get("APP_VERSION", "dev")
 PORT = int(os.environ.get("PORT", "8088"))
 CONFIG_PATH = os.environ.get("CONFIG", "/config/config.json")
 DEFAULT_DB = os.environ.get("NPM_DB", "/npm/database.sqlite")
@@ -442,6 +443,7 @@ def publish(cfg):
     hosts += [custom_host(s) for s in cfg["sites"]]
     state = {
         "title": cfg["title"],
+        "app_version": APP_VERSION,
         "hosts": hosts,
         "favorites": cfg["favorites"],
         "search": cfg["search"],
@@ -779,7 +781,7 @@ class Handler(BaseHTTPRequestHandler):
                 if path.startswith("/api/icon/"):
                     return self.icon(urllib.parse.unquote(path[len("/api/icon/"):]))
                 if path == "/health":
-                    return self.send(200, b"ok", "text/plain")
+                    return self.send(200, f"ok {APP_VERSION}".encode(), "text/plain")
                 if path == "/api/config":
                     self.require_admin()
                     return self.send(200, public_config())
@@ -962,5 +964,5 @@ class Server(ThreadingHTTPServer):
 if __name__ == "__main__":
     threading.Thread(target=refresh_loop, daemon=True).start()
     wake.set()
-    print(f"NPM Dashboard on :{PORT}, config={CONFIG_PATH}, openbao={BAO_ADDR or 'off'}", flush=True)
+    print(f"Home {APP_VERSION} on :{PORT}, config={CONFIG_PATH}, openbao={BAO_ADDR or 'off'}", flush=True)
     Server(("0.0.0.0", PORT), Handler).serve_forever()

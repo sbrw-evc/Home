@@ -1,18 +1,19 @@
 services:
-  npm-dashboard:
-    build: .
-    container_name: npm-dashboard
+  home:
+    image: ghcr.io/sbrw-evc/home:${HOME_VERSION:-latest}
+    build: .                # для локальной сборки: docker compose up -d --build
+    container_name: home
     restart: unless-stopped
     ports:
-      - "8088:8088"
+      - "${HOME_PORT:-8088}:8088"
     env_file:
-      - .env   # секреты OpenBao (BAO_TOKEN или BAO_ROLE_ID/BAO_SECRET_ID), см. .env.example
+      - .env   # OpenBao (BAO_ADDR, BAO_TOKEN или BAO_ROLE_ID/BAO_SECRET_ID), см. .env.example
     environment:
       TITLE: "Мои сервисы"      # используется только при первом запуске, дальше — в настройках
       POLL_SECONDS: "2"         # как часто проверять локальную базу NPM
       API_POLL_SECONDS: "30"    # как часто опрашивать удалённые NPM (по умолчанию)
     volumes:
-      # настройки, свои сайты и избранное (без паролей)
+      # настройки, свои сайты, избранное и кэш иконок (без паролей)
       - ./config:/config
       # необязательно: каталог data локального Nginx Proxy Manager, только чтение
-      - /data/compose/1/data:/npm:ro
+      - ${NPM_DATA_DIR:-./npm-data}:/npm:ro
