@@ -128,7 +128,7 @@ bao write -f auth/approle/role/npm-dashboard/secret-id
 - `GET /api/icon/<key>` — иконка сайта (только для хостов из списка, произвольные адреса не принимаются)
 - `GET /health`
 
-Требуют пароль администратора (заголовок `X-Admin-Token`):
+Требуют пароль администратора (заголовок `X-Admin-Token`, значение в URL-кодировке — так можно передать пароль с кириллицей):
 `GET /api/config`, `PUT /api/config/general`, `PUT /api/config/sources`, `POST /api/sources/test`,
 `POST /api/sites`, `PUT|DELETE /api/sites/<id>`, `POST /api/favorites`.
 

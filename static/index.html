@@ -624,7 +624,7 @@ let adminToken = (() => { try { return sessionStorage.getItem('admin') || ''; } 
 async function api(method, url, body) {
   for (let attempt = 0; attempt < 2; attempt++) {
     const r = await fetch(url, {
-      method, headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken },
+      method, headers: { 'Content-Type': 'application/json', 'X-Admin-Token': encodeURIComponent(adminToken) },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const data = await r.json().catch(() => ({}));
@@ -648,7 +648,7 @@ function login() {
     m.$('#lf').onsubmit = async e => {
       e.preventDefault();
       const pw = m.$('#lp').value;
-      const r = await fetch('api/login', { method: 'POST', headers: { 'X-Admin-Token': pw, 'Content-Type': 'application/json' }, body: '{}' });
+      const r = await fetch('api/login', { method: 'POST', headers: { 'X-Admin-Token': encodeURIComponent(pw), 'Content-Type': 'application/json' }, body: '{}' });
       if (r.ok) {
         adminToken = pw; ok = true;
         try { sessionStorage.setItem('admin', pw); } catch {}
@@ -1200,7 +1200,8 @@ function bindSecurity(c) {
     bar.style.width = (nw.value ? Math.max(8, score * 20) : 0) + '%';
     bar.style.background = score >= 4 ? 'linear-gradient(90deg,#059669,#34d399)' : score >= 3 ? 'linear-gradient(90deg,#2563eb,#60a5fa)'
       : score >= 2 ? 'linear-gradient(90deg,#d97706,#fbbf24)' : 'linear-gradient(90deg,#dc2626,#f87171)';
-    $('#pwHint').textContent = nw.value ? `${label} · ${nw.value.length} симв.` : 'Не короче 8 символов';
+    $('#pwHint').innerHTML = !nw.value ? 'Не короче 8 символов'
+      : esc(`${label} · ${nw.value.length} симв.`) + (/[а-яё]/i.test(nw.value) ? ' · <span style="color:#fcd34d">есть кириллица — проверьте раскладку</span>' : '');
     const same = rep.value && rep.value === nw.value;
     $('#pwMatch').innerHTML = !rep.value ? '&nbsp;' : same ? '<span style="color:#6ee7b7">Пароли совпадают</span>' : '<span style="color:#fca5a5">Пароли не совпадают</span>';
     $('#pwSave').disabled = !(nw.value.length >= 8 && same && (!cur || cur.value));

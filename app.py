@@ -760,8 +760,10 @@ class Handler(BaseHTTPRequestHandler):
             pw = admin_password()
         except Exception as e:
             raise ApiError(503, f"Не удалось получить пароль администратора: {e}")
-        if pw and not hmac.compare_digest(self.headers.get("X-Admin-Token", "").encode(), pw.encode()):
-            if self.headers.get("X-Admin-Token"):
+        # заголовки HTTP допускают только Latin-1, поэтому браузер шлет пароль в URL-кодировке (UTF-8)
+        token = urllib.parse.unquote(self.headers.get("X-Admin-Token", ""))
+        if pw and not hmac.compare_digest(token.encode(), pw.encode()):
+            if token:
                 time.sleep(1)  # замедляем перебор паролей
             raise ApiError(401, "Нужен пароль администратора")
 
