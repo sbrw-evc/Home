@@ -8,7 +8,7 @@
 <style>
 :root{
   --bg:#f3f4f7;--panel:#fff;--card:#fff;--fg:#1b2130;--mut:#6b7385;--bd:#e3e6ec;
-  --acc:#2f6fed;--acc-soft:rgba(47,111,237,.1);--ok:#1f9d55;--warn:#c27c0e;--off:#c0392b;
+  --acc:#2f6fed;--acc-soft:rgba(47,111,237,.1);--ok:#1f9d55;--warn:#c27c0e;--off:#c0392b;--star:#f5a524;
   --shadow:0 8px 24px rgba(20,30,60,.08);
 }
 @media (prefers-color-scheme:dark){:root{
@@ -18,8 +18,18 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--fg);display:flex}
+button,input,select,textarea{font:inherit;color:inherit}
+.btn{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:8px 14px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--acc)}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.danger{color:var(--off)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+input[type=text],input[type=url],input[type=password],input[type=number],input[type=search],select,textarea{
+  background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;width:100%;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
 
-/* sidebar */
+/* боковое меню */
 aside{width:250px;flex:none;background:var(--panel);border-right:1px solid var(--bd);display:flex;flex-direction:column;height:100vh;position:sticky;top:0}
 .brand{display:flex;align-items:center;gap:10px;padding:20px 18px;font-weight:700;font-size:17px}
 .brand .logo{width:30px;height:30px;border-radius:8px;background:var(--acc);display:grid;place-items:center;color:#fff}
@@ -29,51 +39,94 @@ nav a:hover{background:var(--acc-soft)}
 nav a.active{background:var(--acc);color:#fff}
 nav a .cnt{font-size:12px;opacity:.7;flex:none}
 .navtitle{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);padding:14px 10px 6px}
-.live{padding:14px 18px;border-top:1px solid var(--bd);font-size:12px;color:var(--mut);display:flex;align-items:center;gap:8px}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--mut)}
-.live.on .dot{background:var(--ok);box-shadow:0 0 0 0 rgba(31,157,85,.6);animation:pulse 2s infinite}
+.side-bottom{border-top:1px solid var(--bd);padding:8px 10px}
+.live{padding:6px 10px;font-size:12px;color:var(--mut);display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--mut);flex:none}
+.live.on .dot{background:var(--ok);animation:pulse 2s infinite}
 .live.err .dot{background:var(--off)}
-@keyframes pulse{70%{box-shadow:0 0 0 7px rgba(31,157,85,0)}100%{box-shadow:0 0 0 0 rgba(31,157,85,0)}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(31,157,85,.6)}70%,100%{box-shadow:0 0 0 7px rgba(31,157,85,0)}}
 
-/* main */
+/* верх */
 .main{flex:1;min-width:0;display:flex;flex-direction:column}
-.top{position:sticky;top:0;z-index:2;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(8px);padding:16px 24px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--bd)}
-.top h1{margin:0;font-size:20px;flex:1;min-width:150px;word-break:break-all}
-.burger{display:none;background:none;border:1px solid var(--bd);border-radius:8px;color:var(--fg);padding:6px 10px;font-size:18px;cursor:pointer}
-#q{width:280px;max-width:100%;padding:9px 12px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--fg);font-size:15px;outline:none}
-#q:focus{border-color:var(--acc)}
+.top{position:sticky;top:0;z-index:2;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(8px);padding:14px 24px;border-bottom:1px solid var(--bd)}
+.toprow{display:flex;gap:10px;align-items:center}
+.burger{display:none;background:none;border:1px solid var(--bd);border-radius:8px;padding:6px 10px;font-size:18px;cursor:pointer}
+.search{flex:1;display:flex;border:1px solid var(--bd);border-radius:12px;background:var(--card);overflow:hidden;max-width:760px;margin:0 auto;transition:border-color .15s,box-shadow .15s}
+.search:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-soft)}
+.search select{width:auto;border:0;border-right:1px solid var(--bd);border-radius:0;background:transparent;padding:0 10px;font-size:14px;max-width:150px;cursor:pointer}
+.search input{border:0!important;border-radius:0;padding:12px 14px;font-size:16px;flex:1;min-width:0;background:transparent}
+.search button{border:0;background:var(--acc);color:#fff;padding:0 18px;cursor:pointer;font-size:14px}
+.hint{text-align:center;color:var(--mut);font-size:12px;margin-top:6px;min-height:16px}
+.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.bar h1{margin:0;font-size:20px;flex:1;min-width:150px;word-break:break-all}
 .seg{display:flex;border:1px solid var(--bd);border-radius:8px;overflow:hidden}
-.seg button{background:var(--card);color:var(--mut);border:0;padding:8px 12px;cursor:pointer;font-size:13px}
+.seg button{background:var(--card);color:var(--mut);border:0;padding:7px 12px;cursor:pointer;font-size:13px}
 .seg button.on{background:var(--acc);color:#fff}
 .content{padding:20px 24px 40px}
 .stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
-.stat{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;min-width:110px}
-.stat b{display:block;font-size:20px}
+.stat{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 14px;min-width:100px}
+.stat b{display:block;font-size:19px}
 .stat span{font-size:12px;color:var(--mut)}
 
+/* карточки */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
 .grid.list{grid-template-columns:1fr;gap:6px}
-.card{position:relative;display:block;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;color:inherit;text-decoration:none;transition:transform .15s,border-color .15s,box-shadow .15s,opacity .3s;animation:in .35s ease}
+.card{position:relative;display:block;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;color:inherit;text-decoration:none;transition:transform .15s,border-color .15s,box-shadow .15s;animation:in .35s ease}
 .card:hover{transform:translateY(-2px);border-color:var(--acc);box-shadow:var(--shadow)}
 .card.disabled{opacity:.5}
 .card.flash{animation:flash 1.6s ease}
 @keyframes in{from{opacity:0;transform:scale(.97)}}
 @keyframes flash{0%,40%{box-shadow:0 0 0 3px var(--acc)}}
-.head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.head{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding-right:52px}
 .ico{width:30px;height:30px;border-radius:7px;flex:none;display:grid;place-items:center;font-weight:700;color:#fff;overflow:hidden}
 .ico img{width:100%;height:100%;object-fit:contain;background:#fff}
-.title{font-weight:600;font-size:16px;text-transform:capitalize;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.title{font-weight:600;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card:not(.custom) .title{text-transform:capitalize}
 .domain{color:var(--acc);word-break:break-all;font-size:14px}
+.desc{color:var(--fg);font-size:13px;margin-top:4px;opacity:.85}
 .alt{color:var(--mut);font-size:12px;word-break:break-all}
 .target{color:var(--mut);font-size:12px;margin-top:6px;font-family:ui-monospace,Consolas,monospace;word-break:break-all}
 .badges{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
 .b{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--bd);color:var(--mut)}
 .b.ok{color:var(--ok);border-color:currentColor}.b.warn{color:var(--warn);border-color:currentColor}.b.off{color:var(--off);border-color:currentColor}
-.grid.list .card{display:grid;grid-template-columns:minmax(160px,1.2fr) 2fr 2fr auto;align-items:center;gap:14px;padding:10px 14px}
-.grid.list .head{margin:0}.grid.list .target{margin:0}.grid.list .badges{margin:0}
-.grid.list .alt{display:none}
-.empty{color:var(--mut);text-align:center;padding:60px 0}
-.toast{position:fixed;right:20px;bottom:20px;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;box-shadow:var(--shadow);font-size:14px;opacity:0;transform:translateY(10px);transition:.25s;pointer-events:none;z-index:10}
+.acts{position:absolute;top:10px;right:10px;display:flex;gap:2px}
+.acts button{background:none;border:0;cursor:pointer;font-size:17px;line-height:1;padding:4px;border-radius:6px;color:var(--mut);opacity:.55;transition:opacity .15s,color .15s}
+.card:hover .acts button{opacity:1}
+.acts button:hover{background:var(--acc-soft)}
+.acts .fav.on{color:var(--star);opacity:1}
+.grid.list .card{display:grid;grid-template-columns:minmax(180px,1.2fr) 2fr 2fr auto;align-items:center;gap:14px;padding:10px 70px 10px 14px}
+.grid.list .head,.grid.list .target,.grid.list .badges{margin:0}
+.grid.list .alt,.grid.list .desc{display:none}
+.grid.list .acts{top:50%;transform:translateY(-50%)}
+.empty{color:var(--mut);text-align:center;padding:60px 0;grid-column:1/-1}
+
+/* настройки */
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:18px;margin-bottom:18px;max-width:900px}
+.panel h2{margin:0 0 4px;font-size:17px}
+.panel .sub{color:var(--mut);font-size:13px;margin:0 0 14px}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mut)}
+label.chk{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+.row{border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:10px}
+.row-h{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.row-h b{flex:1}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.pill{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid currentColor}
+.pill.ok{color:var(--ok)}.pill.err{color:var(--off)}.pill.mut{color:var(--mut)}
+.note{font-size:13px;color:var(--mut);margin-top:8px;word-break:break-word}
+.note.err{color:var(--off)}
+.sitelist{display:flex;flex-direction:column;gap:6px}
+.siterow{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--bd);border-radius:8px}
+.siterow .grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.siterow small{color:var(--mut)}
+
+/* модальные окна и уведомления */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:20;padding:16px}
+.modal.show{display:flex}
+.dialog{background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:20px;width:100%;max-width:480px;box-shadow:var(--shadow);max-height:90vh;overflow:auto}
+.dialog h3{margin:0 0 14px}
+.dialog .fields{grid-template-columns:1fr}
+.toast{position:fixed;right:20px;bottom:20px;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;box-shadow:var(--shadow);font-size:14px;opacity:0;transform:translateY(10px);transition:.25s;pointer-events:none;z-index:30;max-width:calc(100vw - 40px)}
 .toast.show{opacity:1;transform:none}
 
 @media (max-width:820px){
@@ -81,8 +134,10 @@ nav a .cnt{font-size:12px;opacity:.7;flex:none}
   body.menu aside{transform:none}
   .burger{display:block}
   .top,.content{padding-left:16px;padding-right:16px}
-  #q{width:100%}
+  .search select{max-width:96px}
+  .search button{padding:0 12px}
   .grid.list .card{grid-template-columns:1fr}
+  .hint{display:none}
 }
 </style>
 </head>
@@ -90,204 +145,571 @@ nav a .cnt{font-size:12px;opacity:.7;flex:none}
 <aside>
   <div class="brand"><div class="logo">▦</div><span id="brand">Сервисы</span></div>
   <nav id="nav"></nav>
-  <div class="live" id="live"><span class="dot"></span><span id="liveText">подключение…</span></div>
+  <div class="side-bottom">
+    <nav style="padding:0"><a href="#/settings" id="navSettings"><span>⚙ Настройки</span></a></nav>
+    <div class="live" id="live"><span class="dot"></span><span id="liveText">подключение…</span></div>
+  </div>
 </aside>
 
 <div class="main">
   <div class="top">
-    <button class="burger" id="burger" aria-label="Меню">☰</button>
-    <h1 id="pageTitle">Все сайты</h1>
-    <input id="q" type="search" placeholder="Поиск по домену или адресу…">
-    <div class="seg" id="view">
-      <button data-v="grid">Плитка</button><button data-v="list">Список</button>
+    <div class="toprow">
+      <button class="burger" id="burger" aria-label="Меню">☰</button>
+      <form class="search" id="searchForm">
+        <select id="engine" aria-label="Поисковая система"></select>
+        <input id="q" type="search" placeholder="Поиск в интернете или по сайтам…" autocomplete="off" autofocus>
+        <button type="submit">Найти</button>
+      </form>
     </div>
+    <div class="hint" id="hint"></div>
   </div>
-  <div class="content">
-    <div class="stats" id="stats"></div>
-    <div class="grid" id="grid"></div>
-  </div>
+  <div class="content" id="view"></div>
 </div>
+
+<div class="modal" id="modal"><div class="dialog" id="dialog"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
 const $ = s => document.querySelector(s);
-const state = { hosts: [], version: null, query: '', view: 'grid' };
-try { state.view = localStorage.getItem('view') || 'grid'; } catch {}
-const cards = new Map();          // id -> {el, sig}
-const colors = ['#2f6fed','#7c3aed','#db2777','#ea580c','#16a34a','#0891b2','#ca8a04','#4f46e5'];
-const color = s => colors[[...s].reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length];
-const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-// ---- роутинг: #/ или #/group/<домен>
-const route = () => {
-  const m = location.hash.match(/^#\/group\/(.+)$/);
-  return m ? decodeURIComponent(m[1]) : null;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store = {
+  get(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
 };
 
-function groups() {
-  const g = {};
-  state.hosts.forEach(h => (g[h.group] = (g[h.group] || 0) + 1));
-  return Object.entries(g).sort((a, b) => a[0].split('.').length - b[0].split('.').length || a[0].localeCompare(b[0]));
-}
+const ENGINES = [
+  { id: 'google', name: 'Google', url: 'https://www.google.com/search?q=%s' },
+  { id: 'yandex', name: 'Яндекс', url: 'https://yandex.ru/search/?text=%s' },
+  { id: 'duckduckgo', name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=%s' },
+  { id: 'bing', name: 'Bing', url: 'https://www.bing.com/search?q=%s' },
+  { id: 'startpage', name: 'Startpage', url: 'https://www.startpage.com/do/search?q=%s' },
+];
 
-function renderNav() {
-  const cur = route();
-  $('#nav').innerHTML =
-    `<a href="#/" class="${cur ? '' : 'active'}"><span>Все сайты</span><span class="cnt">${state.hosts.length}</span></a>` +
-    `<div class="navtitle">Домены</div>` +
-    groups().map(([g, n]) =>
-      `<a href="#/group/${encodeURIComponent(g)}" class="${cur === g ? 'active' : ''}"><span>${esc(g)}</span><span class="cnt">${n}</span></a>`
-    ).join('');
-}
+const S = { hosts: [], favorites: new Set(), search: { engine: 'google', custom: [] }, sources: [], version: null,
+            query: '', view: store.get('view', 'grid'), cfg: null };
+const cards = new Map();   // key -> {el, sig}
+const colors = ['#2f6fed','#7c3aed','#db2777','#ea580c','#16a34a','#0891b2','#ca8a04','#4f46e5'];
+const color = s => colors[[...s].reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length];
 
-function cardHTML(h) {
-  const badges = [
-    h.ssl ? '<span class="b ok">HTTPS</span>' : '<span class="b warn">HTTP</span>',
-    h.acl ? '<span class="b">ACL</span>' : '',
-    h.enabled ? '' : '<span class="b off">выключен</span>',
-  ].join('');
-  const alt = h.domains.filter(d => d !== h.domain).map(d => `<div class="alt">${esc(d)}</div>`).join('');
-  return `<div class="head">
-      <div class="ico" style="background:${color(h.name)}">${esc(h.name[0].toUpperCase())}</div>
-      <div class="title">${esc(h.name)}</div>
-    </div>
-    <div><div class="domain">${esc(h.domain)}</div>${alt}</div>
-    <div class="target">→ ${esc(h.target)}</div>
-    <div class="badges">${badges}</div>`;
-}
+// ---------------------------------------------------------------- API и вход администратора
+let adminToken = (() => { try { return sessionStorage.getItem('admin') || ''; } catch { return ''; } })();
 
-function addFavicon(el, h) {
-  const img = new Image();
-  img.onload = () => { if (img.naturalWidth > 1) { const box = el.querySelector('.ico'); box.textContent = ''; box.appendChild(img); } };
-  img.src = h.url + '/favicon.ico';
-}
-
-// обновляем DOM точечно: карточки переиспользуются, меняются только изменившиеся
-function renderCards(changedIds = new Set()) {
-  const grid = $('#grid');
-  const seen = new Set();
-  const sorted = [...state.hosts].sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name));
-  sorted.forEach(h => {
-    const sig = JSON.stringify(h);
-    let c = cards.get(h.id);
-    if (!c) {
-      const el = document.createElement('a');
-      el.target = '_blank'; el.rel = 'noopener';
-      c = { el, sig: null };
-      cards.set(h.id, c);
-    }
-    if (c.sig !== sig) {
-      const iconChanged = !c.sig || JSON.parse(c.sig).url !== h.url;
-      const oldIco = c.el.querySelector('.ico img');
-      c.el.innerHTML = cardHTML(h);
-      if (!iconChanged && oldIco) { const box = c.el.querySelector('.ico'); box.textContent = ''; box.appendChild(oldIco); }
-      else addFavicon(c.el, h);
-      c.el.href = h.url;
-      c.el.className = 'card' + (h.enabled ? '' : ' disabled');
-      c.el.dataset.s = (h.domains.join(' ') + ' ' + h.target).toLowerCase();
-      c.el.dataset.g = h.group;
-      if (c.sig && changedIds.has(h.id)) { void c.el.offsetWidth; c.el.classList.add('flash'); }
-      c.sig = sig;
-    }
-    grid.appendChild(c.el);   // appendChild переставляет существующий узел в нужный порядок
-    seen.add(h.id);
-  });
-  for (const [id, c] of cards) if (!seen.has(id)) { c.el.remove(); cards.delete(id); }
-  applyFilter();
-}
-
-function applyFilter() {
-  const g = route(), q = state.query.trim().toLowerCase();
-  let shown = 0;
-  for (const { el } of cards.values()) {
-    const ok = (!g || el.dataset.g === g) && (!q || el.dataset.s.includes(q));
-    el.style.display = ok ? '' : 'none';
-    shown += ok;
+async function api(method, url, body) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const r = await fetch(url, {
+      method, headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (r.status === 401 && attempt === 0) { if (await login()) continue; throw new Error('Нужен пароль администратора'); }
+    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+    return data;
   }
-  let empty = $('#empty');
-  if (!shown) {
-    if (!empty) { empty = document.createElement('div'); empty.id = 'empty'; empty.className = 'empty'; }
-    empty.textContent = state.hosts.length ? 'Ничего не найдено' : 'Загрузка…';
-    $('#grid').appendChild(empty);
-  } else if (empty) empty.remove();
-
-  const list = state.hosts.filter(h => !g || h.group === g);
-  $('#pageTitle').textContent = g || 'Все сайты';
-  $('#stats').innerHTML = [
-    [list.length, 'всего'], [list.filter(h => h.enabled).length, 'включено'],
-    [list.filter(h => h.ssl).length, 'с HTTPS'], [shown, 'показано'],
-  ].map(([n, t]) => `<div class="stat"><b>${n}</b><span>${t}</span></div>`).join('');
 }
 
-function setView(v) {
-  state.view = v;
-  try { localStorage.setItem('view', v); } catch {}
-  $('#grid').classList.toggle('list', v === 'list');
-  document.querySelectorAll('#view button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+function login() {
+  return new Promise(resolve => {
+    openModal(`<h3>Вход администратора</h3>
+      <form id="lf"><div class="fields"><label class="f">Пароль<input type="password" id="lp" required></label></div>
+      <div class="note err" id="le"></div>
+      <div class="actions"><button class="btn primary">Войти</button><button type="button" class="btn" data-close>Отмена</button></div></form>`,
+      () => resolve(false));
+    $('#lp').focus();
+    $('#lf').onsubmit = async e => {
+      e.preventDefault();
+      const pw = $('#lp').value;
+      const r = await fetch('api/login', { method: 'POST', headers: { 'X-Admin-Token': pw, 'Content-Type': 'application/json' }, body: '{}' });
+      if (r.ok) {
+        adminToken = pw;
+        try { sessionStorage.setItem('admin', pw); } catch {}
+        closeModal(true); resolve(true);
+      } else $('#le').textContent = (await r.json().catch(() => ({}))).error || 'Неверный пароль';
+    };
+  });
 }
+
+// ---------------------------------------------------------------- модальное окно, уведомления
+let onModalCancel = null;
+function openModal(html, onCancel) {
+  $('#dialog').innerHTML = html;
+  $('#modal').classList.add('show');
+  onModalCancel = onCancel || null;
+}
+function closeModal(silent) {
+  $('#modal').classList.remove('show');
+  const cb = onModalCancel; onModalCancel = null;
+  if (!silent && cb) cb();
+  if (!route().settings) $('#q').focus();
+}
+$('#modal').addEventListener('click', e => {
+  if (e.target.id === 'modal' || e.target.closest('[data-close]')) closeModal();
+});
 
 let toastTimer;
 function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ---------------------------------------------------------------- поиск
+const engines = () => [...ENGINES, ...(S.search.custom || [])];
+function currentEngine() {
+  const id = $('#engine').value || store.get('engine', '') || S.search.engine;
+  return engines().find(e => e.id === id) || ENGINES[0];
+}
+function renderEngines() {
+  const sel = $('#engine'), want = store.get('engine', '') || S.search.engine;
+  sel.innerHTML = engines().map(e => `<option value="${esc(e.id)}">${esc(e.name)}</option>`).join('');
+  sel.value = engines().some(e => e.id === want) ? want : 'google';
+  updateHint();
+}
+const looksLikeUrl = q => /^https?:\/\//i.test(q) || /^[\w-]+(\.[\w-]+)+(:\d+)?(\/\S*)?$/.test(q);
+function updateHint() {
+  const q = S.query.trim();
+  const shown = visibleCards();
+  let h = '';
+  if (!q) h = `Enter — поиск в ${currentEngine().name} · «/» — фокус на поиске`;
+  else if (looksLikeUrl(q)) h = `Enter — открыть ${q}`;
+  else h = `Enter — искать «${q}» в ${currentEngine().name}` + (shown.length === 1 ? ` · Ctrl+Enter — открыть ${shown[0].name}` : '');
+  $('#hint').textContent = h;
+}
+$('#engine').addEventListener('change', () => { store.set('engine', $('#engine').value); updateHint(); $('#q').focus(); });
+$('#q').addEventListener('input', e => { S.query = e.target.value; if (route().settings) location.hash = '#/'; else applyFilter(); updateHint(); });
+$('#q').addEventListener('keydown', e => {
+  if (e.key === 'Escape') { $('#q').value = S.query = ''; applyFilter(); updateHint(); }
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    const v = visibleCards();
+    if (v.length) window.open(v[0].url, '_blank', 'noopener');
+  }
+});
+$('#searchForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const q = S.query.trim();
+  if (!q) return;
+  const url = looksLikeUrl(q) ? (/^https?:\/\//i.test(q) ? q : 'https://' + q)
+                              : currentEngine().url.replace('%s', encodeURIComponent(q));
+  window.open(url, '_blank', 'noopener');
+});
+document.addEventListener('keydown', e => {
+  const tag = document.activeElement?.tagName;
+  if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) { e.preventDefault(); $('#q').focus(); }
+});
+
+// ---------------------------------------------------------------- маршруты: #/ #/favorites #/custom #/group/x #/source/x #/settings
+function route() {
+  const h = location.hash;
+  if (h === '#/settings') return { settings: true };
+  if (h === '#/favorites') return { fav: true, title: '★ Избранное' };
+  if (h === '#/custom') return { custom: true, title: 'Свои сайты' };
+  let m = h.match(/^#\/group\/(.+)$/);
+  if (m) return { group: decodeURIComponent(m[1]), title: decodeURIComponent(m[1]) };
+  m = h.match(/^#\/source\/(.+)$/);
+  if (m) return { source: decodeURIComponent(m[1]), title: decodeURIComponent(m[1]) };
+  return { all: true, title: 'Все сайты' };
+}
+function matchRoute(h, r) {
+  if (r.fav) return S.favorites.has(h.key);
+  if (r.custom) return h.custom;
+  if (r.group) return h.group === r.group;
+  if (r.source) return h.source === r.source;
+  return true;
+}
+
+// ---------------------------------------------------------------- меню
+function renderNav() {
+  const r = route(), cur = location.hash || '#/';
+  const link = (href, label, n) => `<a href="${href}" class="${cur === href || (href === '#/' && r.all) ? 'active' : ''}"><span>${label}</span><span class="cnt">${n ?? ''}</span></a>`;
+  const groups = {}, sources = {};
+  S.hosts.forEach(h => { if (!h.custom) groups[h.group] = (groups[h.group] || 0) + 1; sources[h.source] = (sources[h.source] || 0) + 1; });
+  const favN = S.hosts.filter(h => S.favorites.has(h.key)).length;
+  const customN = S.hosts.filter(h => h.custom).length;
+  let html = link('#/favorites', '★ Избранное', favN) + link('#/', 'Все сайты', S.hosts.length) + link('#/custom', 'Свои сайты', customN);
+  const npmSources = Object.keys(sources).filter(s => s !== 'Свои сайты');
+  if (npmSources.length > 1) {
+    html += '<div class="navtitle">Источники</div>' +
+      npmSources.map(s => link('#/source/' + encodeURIComponent(s), esc(s), sources[s])).join('');
+  }
+  html += '<div class="navtitle">Домены</div>' +
+    Object.entries(groups).sort((a, b) => a[0].split('.').length - b[0].split('.').length || a[0].localeCompare(b[0]))
+      .map(([g, n]) => link('#/group/' + encodeURIComponent(g), esc(g), n)).join('');
+  $('#nav').innerHTML = html;
+  $('#navSettings').classList.toggle('active', !!r.settings);
+}
+
+// ---------------------------------------------------------------- карточки
+function cardHTML(h) {
+  const fav = S.favorites.has(h.key);
+  const badges = h.custom
+    ? `<span class="b">свой</span>${h.ssl ? '<span class="b ok">HTTPS</span>' : ''}`
+    : [h.ssl ? '<span class="b ok">HTTPS</span>' : '<span class="b warn">HTTP</span>',
+       h.acl ? '<span class="b">ACL</span>' : '',
+       h.enabled ? '' : '<span class="b off">выключен</span>',
+       S.sources.filter(s => s.enabled).length > 1 ? `<span class="b">${esc(h.source)}</span>` : ''].join('');
+  const alt = h.domains.filter(d => d !== h.domain).map(d => `<div class="alt">${esc(d)}</div>`).join('');
+  return `<div class="acts">
+      ${h.custom ? '<button class="edit" title="Изменить">✎</button>' : ''}
+      <button class="fav ${fav ? 'on' : ''}" title="${fav ? 'Убрать из избранного' : 'В избранное'}">${fav ? '★' : '☆'}</button>
+    </div>
+    <div class="head">
+      <div class="ico" style="background:${color(h.name || '?')}">${esc((h.name || '?')[0].toUpperCase())}</div>
+      <div class="title">${esc(h.name)}</div>
+    </div>
+    <div><div class="domain">${esc(h.domain)}</div>${alt}${h.description ? `<div class="desc">${esc(h.description)}</div>` : ''}</div>
+    ${h.target ? `<div class="target">→ ${esc(h.target)}</div>` : '<div></div>'}
+    <div class="badges">${badges}</div>`;
+}
+
+function loadIcon(el, h) {
+  const img = new Image();
+  img.referrerPolicy = 'no-referrer';
+  img.onload = () => { if (img.naturalWidth > 1) { const box = el.querySelector('.ico'); box.textContent = ''; box.style.background = 'transparent'; box.appendChild(img); } };
+  img.src = h.icon || (h.url.replace(/\/+$/, '').match(/^https?:\/\/[^/]+/) || [h.url])[0] + '/favicon.ico';
+}
+
+function sortHosts(list) {
+  return [...list].sort((a, b) =>
+    (S.favorites.has(b.key) - S.favorites.has(a.key)) || (b.custom - a.custom) ||
+    a.group.localeCompare(b.group) || a.name.localeCompare(b.name));
+}
+
+// точечное обновление DOM: карточки переиспользуются, перерисовываются только изменившиеся
+function renderCards(changed = new Set()) {
+  const grid = $('#grid');
+  if (!grid) return;
+  const seen = new Set();
+  sortHosts(S.hosts).forEach(h => {
+    const sig = JSON.stringify(h) + S.favorites.has(h.key) + S.sources.filter(s => s.enabled).length;
+    let c = cards.get(h.key);
+    if (!c) {
+      const el = document.createElement('a');
+      el.target = '_blank'; el.rel = 'noopener';
+      c = { el, sig: null, icon: null };
+      cards.set(h.key, c);
+    }
+    if (c.sig !== sig) {
+      const iconSrc = h.icon || h.url;
+      const oldImg = c.icon === iconSrc ? c.el.querySelector('.ico img') : null;
+      c.el.innerHTML = cardHTML(h);
+      if (oldImg) { const box = c.el.querySelector('.ico'); box.textContent = ''; box.style.background = 'transparent'; box.appendChild(oldImg); }
+      else loadIcon(c.el, h);
+      c.icon = iconSrc;
+      c.el.href = h.url;
+      c.el.className = 'card' + (h.enabled ? '' : ' disabled') + (h.custom ? ' custom' : '');
+      c.el.dataset.key = h.key;
+      c.el.dataset.s = [h.name, h.domain, ...h.domains, h.target, h.description, h.group].join(' ').toLowerCase();
+      if (c.sig && changed.has(h.key)) { c.el.classList.remove('flash'); void c.el.offsetWidth; c.el.classList.add('flash'); }
+      c.sig = sig;
+    }
+    grid.appendChild(c.el);
+    seen.add(h.key);
+  });
+  for (const [k, c] of cards) if (!seen.has(k)) { c.el.remove(); cards.delete(k); }
+  applyFilter();
+}
+
+function visibleCards() {
+  const r = route(), q = S.query.trim().toLowerCase();
+  return sortHosts(S.hosts).filter(h => matchRoute(h, r) &&
+    (!q || (cards.get(h.key)?.el.dataset.s || '').includes(q)));
+}
+
+function applyFilter() {
+  const grid = $('#grid');
+  if (!grid) return;
+  const r = route();
+  const vis = new Set(visibleCards().map(h => h.key));
+  for (const [k, c] of cards) c.el.style.display = vis.has(k) ? '' : 'none';
+  let empty = $('#empty');
+  if (!vis.size) {
+    if (!empty) { empty = document.createElement('div'); empty.id = 'empty'; empty.className = 'empty'; }
+    empty.textContent = S.version === null ? 'Загрузка…' : r.fav && !S.query ? 'В избранном пока пусто — нажмите ☆ на карточке' : 'Ничего не найдено';
+    grid.appendChild(empty);
+  } else if (empty) empty.remove();
+
+  const list = S.hosts.filter(h => matchRoute(h, r));
+  $('#pageTitle').textContent = r.title;
+  $('#stats').innerHTML = [
+    [list.length, 'всего'], [list.filter(h => h.enabled).length, 'включено'],
+    [list.filter(h => h.ssl).length, 'с HTTPS'], [vis.size, 'показано'],
+  ].map(([n, t]) => `<div class="stat"><b>${n}</b><span>${t}</span></div>`).join('');
+}
+
+function setView(v) {
+  S.view = v; store.set('view', v);
+  $('#grid')?.classList.toggle('list', v === 'list');
+  document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+}
+
+function renderMain() {
+  cards.clear();
+  $('#view').innerHTML = `
+    <div class="bar">
+      <h1 id="pageTitle"></h1>
+      <button class="btn" id="addSite">+ Свой сайт</button>
+      <div class="seg" id="viewSeg"><button data-v="grid">Плитка</button><button data-v="list">Список</button></div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="grid" id="grid"></div>`;
+  $('#addSite').onclick = () => siteDialog();
+  $('#viewSeg').onclick = e => e.target.dataset.v && setView(e.target.dataset.v);
+  $('#grid').addEventListener('click', onCardClick);
+  setView(S.view);
+  renderCards();
+}
+
+async function onCardClick(e) {
+  const btn = e.target.closest('.acts button');
+  if (!btn) return;
+  e.preventDefault(); e.stopPropagation();
+  const key = btn.closest('.card').dataset.key;
+  const h = S.hosts.find(x => x.key === key);
+  if (btn.classList.contains('edit')) return siteDialog(h);
+  const on = !S.favorites.has(key);
+  // оптимистичное обновление, сервер подтвердит через SSE
+  on ? S.favorites.add(key) : S.favorites.delete(key);
+  renderNav(); renderCards();
+  try { await api('POST', 'api/favorites', { key, on }); }
+  catch (err) { on ? S.favorites.delete(key) : S.favorites.add(key); renderNav(); renderCards(); toast(err.message); }
+}
+
+// ---------------------------------------------------------------- свой сайт
+function siteDialog(h) {
+  const groups = [...new Set(S.hosts.map(x => x.group))].sort();
+  openModal(`<h3>${h ? 'Изменить сайт' : 'Новый сайт'}</h3>
+    <form id="sf"><div class="fields">
+      <label class="f">Название *<input type="text" name="name" required maxlength="100" value="${esc(h?.name)}"></label>
+      <label class="f">Адрес *<input type="url" name="url" required placeholder="https://example.com" value="${esc(h?.url)}"></label>
+      <label class="f">Группа<input type="text" name="group" list="groupsList" placeholder="Свои сайты" value="${esc(h && h.group !== 'Свои сайты' ? h.group : '')}"></label>
+      <datalist id="groupsList">${groups.map(g => `<option value="${esc(g)}">`).join('')}</datalist>
+      <label class="f">Описание<input type="text" name="description" maxlength="300" value="${esc(h?.description)}"></label>
+      <label class="f">Иконка (URL, необязательно)<input type="url" name="icon" placeholder="по умолчанию — favicon сайта" value="${esc(h?.icon)}"></label>
+    </div>
+    <div class="note err" id="se"></div>
+    <div class="actions">
+      <button class="btn primary">Сохранить</button>
+      <button type="button" class="btn" data-close>Отмена</button>
+      ${h ? '<button type="button" class="btn danger" id="sdel" style="margin-left:auto">Удалить</button>' : ''}
+    </div></form>`);
+  $('#sf [name=name]').focus();
+  $('#sf').onsubmit = async e => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    try {
+      if (h) await api('PUT', 'api/sites/' + encodeURIComponent(h.id), data);
+      else await api('POST', 'api/sites', data);
+      closeModal(true); toast(h ? 'Сайт обновлён' : 'Сайт добавлен');
+      if (route().settings) loadSettings();
+    } catch (err) { $('#se').textContent = err.message; }
+  };
+  if (h) $('#sdel').onclick = async () => {
+    if (!confirm(`Удалить «${h.name}»?`)) return;
+    try {
+      await api('DELETE', 'api/sites/' + encodeURIComponent(h.id));
+      closeModal(true); toast('Сайт удалён');
+      if (route().settings) loadSettings();
+    } catch (err) { $('#se').textContent = err.message; }
+  };
+}
+
+// ---------------------------------------------------------------- настройки
+async function loadSettings() {
+  $('#view').innerHTML = '<div class="empty">Загрузка настроек…</div>';
+  try { S.cfg = await api('GET', 'api/config'); }
+  catch (err) { $('#view').innerHTML = `<div class="panel"><h2>Настройки</h2><p class="note err">${esc(err.message)}</p><button class="btn" onclick="loadSettings()">Повторить</button></div>`; return; }
+  renderSettings();
+}
+
+function renderSettings() {
+  const c = S.cfg, bao = c.openbao;
+  const engineOpts = id => [...ENGINES, ...c.search.custom].map(e => `<option value="${esc(e.id)}" ${e.id === id ? 'selected' : ''}>${esc(e.name)}</option>`).join('');
+  $('#view').innerHTML = `
+    <div class="bar"><h1>Настройки</h1></div>
+
+    <div class="panel">
+      <h2>Общие</h2><p class="sub">Заголовок и поиск по умолчанию для всех устройств.</p>
+      <div class="fields">
+        <label class="f">Заголовок<input type="text" id="gTitle" value="${esc(c.title)}"></label>
+        <label class="f">Поисковик по умолчанию<select id="gEngine">${engineOpts(c.search.engine)}</select></label>
+      </div>
+      <p><label class="chk"><input type="checkbox" id="gDisabled" ${c.show_disabled ? 'checked' : ''}> Показывать выключенные хосты NPM</label></p>
+      <h2 style="font-size:15px;margin-top:18px">Свои поисковые системы</h2>
+      <p class="sub">В адресе вместо запроса укажите <code>%s</code>, например <code>https://github.com/search?q=%s</code></p>
+      <div id="engList"></div>
+      <div class="actions">
+        <button class="btn sm" id="engAdd">+ Поисковик</button>
+        <button class="btn primary" id="gSave" style="margin-left:auto">Сохранить</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Источники NPM</h2>
+      <p class="sub">Локальная база SQLite или удалённый Nginx Proxy Manager через API. Логины и пароли хранятся только в OpenBao.</p>
+      <p>OpenBao: ${bao.ok ? `<span class="pill ok">подключён</span> <small class="note">${esc(bao.addr)} · ${esc(bao.path)}</small>`
+                   : bao.configured ? `<span class="pill err">ошибка</span> <span class="note err">${esc(bao.error)}</span>`
+                   : '<span class="pill err">не настроен</span> <span class="note">задайте BAO_ADDR и BAO_TOKEN (или BAO_ROLE_ID/BAO_SECRET_ID) — без этого удалённые NPM добавить нельзя</span>'}</p>
+      <div id="srcList"></div>
+      <div class="note err" id="srcErr"></div>
+      <div class="actions">
+        <button class="btn sm" id="srcAddApi">+ Удалённый NPM (API)</button>
+        <button class="btn sm" id="srcAddDb">+ Локальная база</button>
+        <button class="btn primary" id="srcSave" style="margin-left:auto">Сохранить источники</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Свои сайты</h2><p class="sub">Сайты, которых нет в NPM.</p>
+      <div class="sitelist" id="siteList"></div>
+      <div class="actions"><button class="btn sm" id="siteAdd">+ Свой сайт</button></div>
+    </div>`;
+
+  // поисковики
+  const engRow = e => `<div class="row eng"><div class="fields">
+      <label class="f">Название<input type="text" class="en" value="${esc(e.name)}"></label>
+      <label class="f">Адрес с %s<input type="url" class="eu" value="${esc(e.url)}" placeholder="https://…?q=%s"></label>
+    </div><input type="hidden" class="ei" value="${esc(e.id || '')}">
+    <div class="actions"><button class="btn sm danger" data-del>Удалить</button></div></div>`;
+  $('#engList').innerHTML = c.search.custom.map(engRow).join('');
+  $('#engList').onclick = e => e.target.closest('[data-del]')?.closest('.row').remove();
+  $('#engAdd').onclick = () => $('#engList').insertAdjacentHTML('beforeend', engRow({ name: '', url: '' }));
+  $('#gSave').onclick = async () => {
+    const custom = [...document.querySelectorAll('#engList .eng')].map(r => ({
+      id: r.querySelector('.ei').value, name: r.querySelector('.en').value, url: r.querySelector('.eu').value }));
+    try {
+      await api('PUT', 'api/config/general', { title: $('#gTitle').value, show_disabled: $('#gDisabled').checked,
+                                               search_engine: $('#gEngine').value, custom_engines: custom });
+      toast('Настройки сохранены'); loadSettings();
+    } catch (err) { toast(err.message); }
+  };
+
+  // источники
+  const status = s => {
+    const st = S.sources.find(x => x.id === s.id);
+    if (!s.enabled) return '<span class="pill mut">выключен</span>';
+    if (!st || st.ok === null || st.ok === undefined) return '<span class="pill mut">новый</span>';
+    return st.ok ? `<span class="pill ok">ok · ${st.count}</span>` : `<span class="pill err" title="${esc(st.error)}">ошибка</span>`;
+  };
+  const srcRow = s => `<div class="row src" data-id="${esc(s.id || '')}" data-type="${s.type}">
+    <div class="row-h"><b>${s.type === 'api' ? '🌐 Удалённый NPM' : '🗄 Локальная база'}</b>${status(s)}
+      <label class="chk"><input type="checkbox" class="s-en" ${s.enabled !== false ? 'checked' : ''}> включён</label></div>
+    <div class="fields">
+      <label class="f">Название<input type="text" class="s-name" value="${esc(s.name)}"></label>
+      ${s.type === 'api' ? `
+        <label class="f">Адрес NPM (админка)<input type="url" class="s-url" value="${esc(s.url)}" placeholder="https://npm.example.com"></label>
+        <label class="f">Логин (email)<input type="text" class="s-email" value="${esc(s.email)}" autocomplete="off"></label>
+        <label class="f">Пароль<input type="password" class="s-pw" autocomplete="new-password" placeholder="${s.has_password ? '•••••• сохранён в OpenBao' : ''}"></label>
+        <label class="f">Опрос, сек<input type="number" class="s-poll" min="5" value="${esc(s.poll_seconds || 30)}"></label>`
+      : `<label class="f">Путь к database.sqlite<input type="text" class="s-path" value="${esc(s.path || '/npm/database.sqlite')}"></label>`}
+    </div>
+    ${s.type === 'api' ? `<p><label class="chk"><input type="checkbox" class="s-tls" ${s.verify_tls !== false ? 'checked' : ''}> Проверять TLS-сертификат</label></p>` : ''}
+    ${s.secret_error ? `<div class="note err">OpenBao: ${esc(s.secret_error)}</div>` : ''}
+    ${(() => { const st = S.sources.find(x => x.id === s.id); return st && st.error ? `<div class="note err">${esc(st.error)}</div>` : ''; })()}
+    <div class="note s-test"></div>
+    <div class="actions"><button class="btn sm" data-test>Проверить</button><button class="btn sm danger" data-del>Удалить</button></div>
+  </div>`;
+  const readRow = r => {
+    const g = cls => r.querySelector(cls);
+    const s = { id: r.dataset.id || undefined, type: r.dataset.type, name: g('.s-name').value, enabled: g('.s-en').checked };
+    if (s.type === 'api') Object.assign(s, { url: g('.s-url').value, email: g('.s-email').value, password: g('.s-pw').value,
+                                              poll_seconds: +g('.s-poll').value, verify_tls: g('.s-tls').checked });
+    else s.path = g('.s-path').value;
+    return s;
+  };
+  $('#srcList').innerHTML = c.sources.map(srcRow).join('') || '<p class="note">Источников нет</p>';
+  $('#srcAddApi').onclick = () => $('#srcList').insertAdjacentHTML('beforeend', srcRow({ type: 'api', name: 'Удалённый NPM', enabled: true }));
+  $('#srcAddDb').onclick = () => $('#srcList').insertAdjacentHTML('beforeend', srcRow({ type: 'sqlite', name: 'Локальный NPM', enabled: true }));
+  $('#srcList').onclick = async e => {
+    const row = e.target.closest('.src');
+    if (!row) return;
+    if (e.target.closest('[data-del]')) {
+      if (confirm('Удалить источник? Его логин и пароль будут удалены из OpenBao после сохранения.')) row.remove();
+    }
+    if (e.target.closest('[data-test]')) {
+      const out = row.querySelector('.s-test'), btn = e.target.closest('[data-test]');
+      out.className = 'note s-test'; out.textContent = 'Проверяю…'; btn.disabled = true;
+      try {
+        const r = await api('POST', 'api/sources/test', readRow(row));
+        out.className = 'note s-test' + (r.ok ? '' : ' err');
+        out.textContent = r.ok ? `✓ Подключено, хостов: ${r.count}` : '✗ ' + r.error;
+      } catch (err) { out.className = 'note s-test err'; out.textContent = '✗ ' + err.message; }
+      btn.disabled = false;
+    }
+  };
+  $('#srcSave').onclick = async () => {
+    $('#srcErr').textContent = '';
+    try {
+      S.cfg = await api('PUT', 'api/config/sources', { sources: [...document.querySelectorAll('#srcList .src')].map(readRow) });
+      toast('Источники сохранены'); renderSettings();
+    } catch (err) { $('#srcErr').textContent = err.message; }
+  };
+
+  // свои сайты
+  const sites = S.hosts.filter(h => h.custom);
+  $('#siteList').innerHTML = sites.map(h => `<div class="siterow">
+      <div class="grow"><b>${esc(h.name)}</b> <small>${esc(h.url)} · ${esc(h.group)}</small></div>
+      <button class="btn sm" data-edit="${esc(h.key)}">Изменить</button></div>`).join('') || '<p class="note">Пока нет</p>';
+  $('#siteList').onclick = e => { const k = e.target.dataset.edit; if (k) siteDialog(S.hosts.find(h => h.key === k)); };
+  $('#siteAdd').onclick = () => siteDialog();
+}
+
+// ---------------------------------------------------------------- состояние и живые обновления
+function render() {
+  renderNav();
+  if (route().settings) loadSettings(); else renderMain();
+  document.body.classList.remove('menu');
 }
 
 function apply(snap) {
-  if (snap.version === state.version) return;
-  const prev = new Map(state.hosts.map(h => [h.id, JSON.stringify(h)]));
-  const first = state.version === null;
-  const changed = new Set(snap.hosts.filter(h => prev.get(h.id) !== JSON.stringify(h)).map(h => h.id));
-  const removed = [...prev.keys()].filter(id => !snap.hosts.some(h => h.id === id)).length;
-  state.hosts = snap.hosts; state.version = snap.version;
+  if (snap.version === S.version) return;
+  const first = S.version === null;
+  const prev = new Map(S.hosts.map(h => [h.key, JSON.stringify(h)]));
+  const changed = new Set(snap.hosts.filter(h => prev.get(h.key) !== JSON.stringify(h)).map(h => h.key));
+  const removed = [...prev.keys()].filter(k => !snap.hosts.some(h => h.key === k)).length;
+  const added = snap.hosts.filter(h => !prev.has(h.key)).length;
+
+  S.hosts = snap.hosts; S.favorites = new Set(snap.favorites); S.search = snap.search;
+  S.sources = snap.sources; S.version = snap.version;
   document.title = snap.title; $('#brand').textContent = snap.title;
-  renderNav(); renderCards(changed);
-  if (!first && (changed.size || removed)) {
-    const added = snap.hosts.filter(h => !prev.has(h.id)).length;
+  renderEngines(); renderNav();
+  if (!route().settings) renderCards(changed);
+  else if (first) render();
+
+  if (!first && (added || removed || changed.size - added)) {
     const parts = [];
     if (added) parts.push(`добавлено: ${added}`);
     if (changed.size - added) parts.push(`изменено: ${changed.size - added}`);
     if (removed) parts.push(`удалено: ${removed}`);
     toast('Список обновлён — ' + parts.join(', '));
   }
+  const bad = S.sources.filter(s => s.enabled && s.ok === false);
+  setLive(bad.length ? 'err' : 'on', bad.length ? `ошибка: ${bad.map(s => s.name).join(', ')}` : 'онлайн · ' + new Date().toLocaleTimeString());
 }
 
-function setLive(cls, text) {
-  $('#live').className = 'live ' + cls;
-  $('#liveText').textContent = text;
-}
+function setLive(cls, text) { $('#live').className = 'live ' + cls; $('#liveText').textContent = text; }
 
-// ---- живые обновления через SSE (с откатом на опрос, если SSE не работает)
 function connect() {
   if (!window.EventSource) return poll();
   const es = new EventSource('api/events');
-  es.addEventListener('hosts', e => {
-    apply(JSON.parse(e.data));
-    setLive('on', 'онлайн · ' + new Date().toLocaleTimeString());
-  });
-  es.addEventListener('failure', e => setLive('err', 'ошибка чтения базы'));
-  es.onopen = () => setLive('on', 'онлайн');
+  es.addEventListener('state', e => apply(JSON.parse(e.data)));
   es.onerror = () => setLive('err', 'нет связи, переподключение…');   // EventSource переподключится сам
 }
 async function poll() {
-  try {
-    apply(await (await fetch('api/hosts', { cache: 'no-store' })).json());
-    setLive('on', 'онлайн · ' + new Date().toLocaleTimeString());
-  } catch { setLive('err', 'нет связи'); }
+  try { apply(await (await fetch('api/state', { cache: 'no-store' })).json()); }
+  catch { setLive('err', 'нет связи'); }
   setTimeout(poll, 5000);
 }
 
-$('#q').addEventListener('input', e => { state.query = e.target.value; applyFilter(); });
-$('#view').addEventListener('click', e => e.target.dataset.v && setView(e.target.dataset.v));
 $('#burger').addEventListener('click', () => document.body.classList.toggle('menu'));
-$('#nav').addEventListener('click', () => document.body.classList.remove('menu'));
-window.addEventListener('hashchange', () => { renderNav(); applyFilter(); });
-document.addEventListener('keydown', e => {
-  if (e.key === '/' && document.activeElement !== $('#q')) { e.preventDefault(); $('#q').focus(); }
+window.addEventListener('hashchange', () => {
+  const wasMain = !!$('#grid'), r = route();
+  if (!r.settings && wasMain) { renderNav(); applyFilter(); updateHint(); document.body.classList.remove('menu'); }
+  else render();
 });
 
-setView(state.view);
-applyFilter();
+renderEngines();
+render();
 connect();
+$('#q').focus();
 </script>
 </body>
 </html>

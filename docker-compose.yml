@@ -5,10 +5,14 @@ services:
     restart: unless-stopped
     ports:
       - "8088:8088"
+    env_file:
+      - .env   # секреты OpenBao (BAO_TOKEN или BAO_ROLE_ID/BAO_SECRET_ID), см. .env.example
     environment:
-      TITLE: "Мои сервисы"
-      SHOW_DISABLED: "true"   # false — скрывать выключенные хосты
-      POLL_SECONDS: "2"       # как часто проверять изменения базы NPM
+      TITLE: "Мои сервисы"      # используется только при первом запуске, дальше — в настройках
+      POLL_SECONDS: "2"         # как часто проверять локальную базу NPM
+      API_POLL_SECONDS: "30"    # как часто опрашивать удалённые NPM (по умолчанию)
     volumes:
-      # каталог data от Nginx Proxy Manager, только чтение
+      # настройки, свои сайты и избранное (без паролей)
+      - ./config:/config
+      # необязательно: каталог data локального Nginx Proxy Manager, только чтение
       - /data/compose/1/data:/npm:ro
