@@ -36,6 +36,37 @@ volumes:
 
 ## OpenBao
 
+### Быстрый старт: OpenBao рядом с дашбордом
+
+В каталоге [`openbao/`](openbao) лежат compose-файл OpenBao (файловое хранилище, порт только на `127.0.0.1`) и скрипт настройки:
+
+```bash
+./openbao/setup.sh
+docker compose -f docker-compose.yml -f docker-compose.openbao.yml up -d --build
+```
+
+`setup.sh` можно запускать повторно. Он:
+1. запускает OpenBao, инициализирует его и сохраняет ключ распечатки и root-токен в `/root/openbao-init.json` (права 600);
+2. включает KV v2 на `secret/`, создаёт политику [`npm-dashboard`](openbao/npm-dashboard.hcl) и AppRole;
+3. записывает `BAO_ADDR`, `BAO_ROLE_ID` и `BAO_SECRET_ID` в `/opt/npm-dashboard/.env` (права 600);
+4. создаёт случайный пароль администратора в `secret/npm-dashboard/admin`.
+
+> **Важно.** Сохраните содержимое `/root/openbao-init.json` в надёжном месте (например, в менеджере паролей) и удалите файл с сервера. Без ключа распечатки данные OpenBao не восстановить.
+
+После перезапуска OpenBao нужно распечатать. Если файла с ключом на сервере уже нет, скрипт спросит ключ:
+
+```bash
+./openbao/unseal.sh
+```
+
+Узнать пароль администратора дашборда:
+
+```bash
+docker exec -it -e BAO_ADDR=http://127.0.0.1:8200 openbao sh -c 'bao login && bao kv get -field=password secret/npm-dashboard/admin'
+```
+
+### Свой OpenBao
+
 Нужен движок секретов KV v2 (по умолчанию `secret/`).
 
 | Что                           | Путь в OpenBao                                  | Ключи              |

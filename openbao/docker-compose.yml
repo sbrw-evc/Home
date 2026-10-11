@@ -1,0 +1,20 @@
+services:
+  openbao:
+    image: openbao/openbao:2.6.4
+    container_name: openbao
+    restart: unless-stopped
+    command: server -config=/openbao/config/config.hcl
+    cap_add:
+      - IPC_LOCK
+    ports:
+      # только локально: дашборд ходит через docker-сеть, CLI — через docker exec
+      - "127.0.0.1:8200:8200"
+    volumes:
+      - ./config.hcl:/openbao/config/config.hcl:ro
+      - ./data:/openbao/file
+    networks:
+      - openbao
+
+networks:
+  openbao:
+    external: true
